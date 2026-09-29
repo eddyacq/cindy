@@ -4,6 +4,7 @@ import { Rating } from './ui/Rating'
 import { useCart } from '../context/CartContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useToast } from '../context/ToastContext'
+import PropTypes from 'prop-types'
 
 export function ProductCard({ product }) {
   const { addItem } = useCart()
@@ -26,6 +27,7 @@ export function ProductCard({ product }) {
   }
 
   const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0
+  const categoryLabel = product.category?.name || product.category // works for both API shape and any leftover mock usage
 
   return (
     <Link to={`/product/${product.id}`} className="card group overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary-200">
@@ -49,12 +51,12 @@ export function ProductCard({ product }) {
         </button>
       </div>
       <div className="p-4">
-        <p className="text-xs text-gray-500 capitalize mb-1">{product.category}</p>
+        <p className="text-xs text-gray-500 capitalize mb-1">{categoryLabel}</p>
         <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-primary-600 transition">
           {product.name}
         </h3>
         <div className="mt-1.5">
-          <Rating value={product.rating} count={product.reviews} />
+          <Rating value={product.rating || 0} count={product.reviews || 0} />
         </div>
         <div className="mt-2.5 flex items-center gap-2">
           <span className="text-base font-bold text-gray-900">GH₵ {product.price.toLocaleString()}</span>
@@ -62,14 +64,27 @@ export function ProductCard({ product }) {
             <span className="text-xs text-gray-400 line-through">GH₵ {product.oldPrice.toLocaleString()}</span>
           )}
         </div>
-        <button
-          onClick={handleAddCart}
-          className="btn-primary w-full mt-3 group/btn"
-        >
+        <button onClick={handleAddCart} className="btn-primary w-full mt-3 group/btn">
           <ShoppingCart size={16} />
           Add to Cart
         </button>
       </div>
     </Link>
   )
+}
+
+ProductCard.propTypes = {
+  product: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    name: PropTypes.string.isRequired,
+    image: PropTypes.string,
+    price: PropTypes.number.isRequired,
+    oldPrice: PropTypes.number,
+    category: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({ name: PropTypes.string }),
+    ]),
+    rating: PropTypes.number,
+    reviews: PropTypes.number,
+  }).isRequired,
 }

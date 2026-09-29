@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Mail, Lock, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { ApiError } from '../services/api'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -13,7 +14,7 @@ export function LoginPage() {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
     if (!email) errs.email = 'Email is required'
@@ -23,12 +24,17 @@ export function LoginPage() {
     if (Object.keys(errs).length > 0) return
 
     setLoading(true)
-    setTimeout(() => {
-      login(email)
-      setLoading(false)
+    try {
+      await login(email, password)
       showToast('Welcome back!')
       navigate('/account')
-    }, 800)
+    } catch (err) {
+      // 401 (wrong credentials), 403 (suspended), 429 (rate limited) all land here
+      const message = err instanceof ApiError ? err.message : 'Something went wrong. Please try again.'
+      setErrors({ form: message })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -37,6 +43,11 @@ export function LoginPage() {
         <h1 className="text-2xl font-bold text-gray-900 text-center">Welcome Back</h1>
         <p className="text-sm text-gray-500 text-center mt-1">Sign in to your account</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {errors.form && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-600">
+              {errors.form}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
             <div className="relative">

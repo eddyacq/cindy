@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
+import PropTypes from 'prop-types'
 
 export function CategoryCard({ category }) {
   return (
     <Link
-      to={`/category/${category.id}`}
+      to={`/category/${category.name.toLowerCase()}`}
       className="group relative aspect-[4/5] overflow-hidden rounded-xl bg-gray-100"
     >
       <img
@@ -22,4 +23,11 @@ export function CategoryCard({ category }) {
       </div>
     </Link>
   )
+}
+
+CategoryCard.propTypes = {
+  category: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    image: PropTypes.string.isRequired,
+  }).isRequired,
 }

@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react'
+import PropTypes from 'prop-types'
 
 export function Rating({ value, size = 14, showNumber = false, count = null }) {
   return (
@@ -16,4 +17,11 @@ export function Rating({ value, size = 14, showNumber = false, count = null }) {
       {count !== null && <span className="text-xs text-gray-500">({count})</span>}
     </div>
   )
+}
+
+Rating.propTypes = {
+  value: PropTypes.number.isRequired,
+  size: PropTypes.number,
+  showNumber: PropTypes.bool,
+  count: PropTypes.number,
 }

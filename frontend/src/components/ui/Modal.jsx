@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
+import PropTypes from 'prop-types'
 
 export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' }) {
   useEffect(() => {
@@ -25,4 +26,12 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
       </div>
     </div>
   )
+}
+
+Modal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  maxWidth: PropTypes.string,
 }

@@ -1,4 +1,5 @@
 import { Minus, Plus } from 'lucide-react'
+import PropTypes from 'prop-types'
 
 export function QuantitySelector({ quantity, onChange, size = 'md' }) {
   const sizes = { sm: 'h-8 w-8', md: 'h-10 w-10' }
@@ -20,4 +21,10 @@ export function QuantitySelector({ quantity, onChange, size = 'md' }) {
       </button>
     </div>
   )
+}
+
+QuantitySelector.propTypes = {
+  quantity: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
+  size: PropTypes.oneOf(['sm', 'md']),
 }

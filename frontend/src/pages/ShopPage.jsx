@@ -1,52 +1,65 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { SlidersHorizontal, X, SearchX } from 'lucide-react'
 import { ProductGrid } from '../components/ProductGrid'
 import { ProductGridSkeleton } from '../components/ui/Skeleton'
 import { EmptyState } from '../components/ui/EmptyState'
-import { SearchX } from 'lucide-react'
-import { products, categories } from '../data/mockData'
+import { categoryService } from '../services/categoryService'
+import { productService } from '../services/productService'
+
+const SORT_OPTIONS = [
+  ['featured', 'Sort: Featured'],
+  ['newest', 'Newest'],
+  ['price_asc', 'Price: Low to High'],
+  ['price_desc', 'Price: High to Low'],
+]
 
 export function ShopPage() {
   const { category } = useParams()
   const [searchParams] = useSearchParams()
   const query = searchParams.get('q') || ''
 
+  const [categories, setCategories] = useState([])
   const [search, setSearch] = useState(query)
   const [selectedCategory, setSelectedCategory] = useState(category || 'all')
-  const [priceRange, setPriceRange] = useState('all')
-  const [minRating, setMinRating] = useState(0)
-  const [inStockOnly, setInStockOnly] = useState(false)
   const [sortBy, setSortBy] = useState('featured')
-  const [loading, setLoading] = useState(false)
+  const [products, setProducts] = useState([])
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
-  const priceRanges = {
-    'all': [0, Infinity],
-    '0-200': [0, 200],
-    '200-500': [200, 500],
-    '500-1000': [500, 1000],
-    '1000+': [1000, Infinity],
+  useEffect(() => {
+    categoryService.list().then(res => setCategories(res.data)).catch(() => {})
+  }, [])
+
+  // debounce typing in the search box so we don't fire a request on every keystroke
+  useEffect(() => {
+    const handle = setTimeout(() => fetchProducts(1), search !== query ? 400 : 0)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedCategory, sortBy])
+
+  function fetchProducts(page) {
+    setLoading(true)
+    setError(null)
+    productService
+      .list({
+        search: search || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+        sort: sortBy === 'featured' ? undefined : sortBy,
+        page,
+        limit: 12,
+      })
+      .then((res) => {
+        setProducts(res.data)
+        setPagination(res.pagination)
+      })
+      .catch(() => setError('Unable to load products right now.'))
+      .finally(() => setLoading(false))
   }
 
-  const filtered = useMemo(() => {
-    let result = [...products]
-    if (search) result = result.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase()))
-    if (selectedCategory !== 'all') result = result.filter(p => p.category === selectedCategory)
-    const [min, max] = priceRanges[priceRange]
-    result = result.filter(p => p.price >= min && p.price < max)
-    if (minRating > 0) result = result.filter(p => p.rating >= minRating)
-    if (inStockOnly) result = result.filter(p => p.stock > 0)
-
-    switch (sortBy) {
-      case 'newest': result.sort((a, b) => b.newArrival - a.newArrival); break
-      case 'price-low': result.sort((a, b) => a.price - b.price); break
-      case 'price-high': result.sort((a, b) => b.price - a.price); break
-      case 'rating': result.sort((a, b) => b.rating - a.rating); break
-      default: result.sort((a, b) => b.featured - a.featured)
-    }
-    return result
-  }, [search, selectedCategory, priceRange, minRating, inStockOnly, sortBy])
+  const clearFilters = () => { setSearch(''); setSelectedCategory('all'); setSortBy('featured') }
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -55,38 +68,11 @@ export function ShopPage() {
         <div className="space-y-1.5">
           <button onClick={() => setSelectedCategory('all')} className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition ${selectedCategory === 'all' ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>All Categories</button>
           {categories.map(c => (
-            <button key={c.id} onClick={() => setSelectedCategory(c.id)} className={`block w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition ${selectedCategory === c.id ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
+            <button key={c.id} onClick={() => setSelectedCategory(c.name.toLowerCase())} className={`block w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition ${selectedCategory === c.name.toLowerCase() ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
               {c.name}
             </button>
           ))}
         </div>
-      </div>
-      <div>
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Price Range</h4>
-        <div className="space-y-1.5">
-          {[['all', 'All Prices'], ['0-200', 'Under GH₵ 200'], ['200-500', 'GH₵ 200 - 500'], ['500-1000', 'GH₵ 500 - 1,000'], ['1000+', 'Over GH₵ 1,000']].map(([val, label]) => (
-            <button key={val} onClick={() => setPriceRange(val)} className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition ${priceRange === val ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Rating</h4>
-        <div className="space-y-1.5">
-          {[0, 3, 4, 4.5].map(r => (
-            <button key={r} onClick={() => setMinRating(r)} className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition ${minRating === r ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {r === 0 ? 'All Ratings' : `${r}+ Stars`}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Availability</h4>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={inStockOnly} onChange={e => setInStockOnly(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-          <span className="text-sm text-gray-600">In Stock Only</span>
-        </label>
       </div>
     </div>
   )
@@ -98,7 +84,6 @@ export function ShopPage() {
       </h1>
 
       <div className="flex gap-6">
-        {/* Desktop sidebar */}
         <aside className="hidden lg:block w-64 shrink-0">
           <div className="card p-5 sticky top-20">
             <FilterContent />
@@ -106,7 +91,6 @@ export function ShopPage() {
         </aside>
 
         <div className="flex-1 min-w-0">
-          {/* Search + sort */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <input
               type="text"
@@ -116,30 +100,41 @@ export function ShopPage() {
               className="input flex-1 min-w-48"
             />
             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="input w-auto">
-              <option value="featured">Sort: Featured</option>
-              <option value="newest">Newest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Highest Rated</option>
+              {SORT_OPTIONS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
             </select>
             <button onClick={() => setFiltersOpen(true)} className="btn-outline lg:hidden">
               <SlidersHorizontal size={16} /> Filters
             </button>
           </div>
 
-          <p className="text-sm text-gray-500 mb-4">{filtered.length} products found</p>
-
-          {loading ? (
+          {error ? (
+            <EmptyState icon={SearchX} title="Something went wrong" description={error} actionLabel="Try Again" onAction={() => fetchProducts(pagination.page)} />
+          ) : loading ? (
             <ProductGridSkeleton count={8} />
-          ) : filtered.length === 0 ? (
-            <EmptyState icon={SearchX} title="No products found" description="Try adjusting your filters or search terms." actionLabel="Clear Filters" onAction={() => { setSearch(''); setSelectedCategory('all'); setPriceRange('all'); setMinRating(0); setInStockOnly(false) }} />
+          ) : products.length === 0 ? (
+            <EmptyState icon={SearchX} title="No products found" description="Try adjusting your filters or search terms." actionLabel="Clear Filters" onAction={clearFilters} />
           ) : (
-            <ProductGrid products={filtered} />
+            <>
+              <p className="text-sm text-gray-500 mb-4">{pagination.total} products found</p>
+              <ProductGrid products={products} />
+              {pagination.totalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-8">
+                  {Array.from({ length: pagination.totalPages }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => fetchProducts(i + 1)}
+                      className={`h-9 w-9 rounded-lg text-sm font-medium transition ${pagination.page === i + 1 ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Mobile filter drawer */}
       {filtersOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setFiltersOpen(false)} />
@@ -152,7 +147,7 @@ export function ShopPage() {
             </div>
             <FilterContent />
             <button onClick={() => setFiltersOpen(false)} className="btn-primary w-full mt-6">
-              Show {filtered.length} Results
+              Show Results
             </button>
           </div>
         </div>

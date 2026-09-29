@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types'
+
 export function Skeleton({ className = '' }) {
   return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
 }
@@ -19,4 +21,12 @@ export function ProductGridSkeleton({ count = 8 }) {
       {Array.from({ length: count }).map((_, i) => <ProductCardSkeleton key={i} />)}
     </div>
   )
+}
+
+Skeleton.propTypes = {
+  className: PropTypes.string,
+}
+
+ProductGridSkeleton.propTypes = {
+  count: PropTypes.number,
 }

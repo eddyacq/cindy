@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { ApiError } from '../services/api'
 
 export function RegisterPage() {
   const { register } = useAuth()
@@ -14,7 +15,7 @@ export function RegisterPage() {
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
     if (!form.firstName) errs.firstName = 'Required'
@@ -23,18 +24,23 @@ export function RegisterPage() {
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email'
     if (!form.phone) errs.phone = 'Required'
     if (!form.password) errs.password = 'Required'
-    else if (form.password.length < 6) errs.password = 'At least 6 characters'
+    else if (form.password.length < 8) errs.password = 'At least 8 characters' // matches backend's minimum
     if (form.confirmPassword !== form.password) errs.confirmPassword = 'Passwords do not match'
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
     setLoading(true)
-    setTimeout(() => {
-      register(form)
-      setLoading(false)
+    try {
+      await register(form)
       showToast('Account created successfully!')
       navigate('/account')
-    }, 800)
+    } catch (err) {
+      // 409 = email already registered, 400 = backend validation caught something the frontend missed
+      const message = err instanceof ApiError ? err.message : 'Something went wrong. Please try again.'
+      setErrors({ form: message })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -43,6 +49,11 @@ export function RegisterPage() {
         <h1 className="text-2xl font-bold text-gray-900 text-center">Create Account</h1>
         <p className="text-sm text-gray-500 text-center mt-1">Join ShopHub today</p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {errors.form && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-600">
+              {errors.form}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>

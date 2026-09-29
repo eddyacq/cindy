@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types'
+
 export function EmptyState({ icon: Icon, title, description, actionLabel, onAction }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -15,4 +17,12 @@ export function EmptyState({ icon: Icon, title, description, actionLabel, onActi
       )}
     </div>
   )
+}
+
+EmptyState.propTypes = {
+  icon: PropTypes.elementType,
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  actionLabel: PropTypes.string,
+  onAction: PropTypes.func,
 }

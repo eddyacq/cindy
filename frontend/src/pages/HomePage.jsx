@@ -1,12 +1,35 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Sparkles } from 'lucide-react'
 import { ProductGrid } from '../components/ProductGrid'
 import { CategoryCard } from '../components/CategoryCard'
-import { categories, products } from '../data/mockData'
+import { ProductGridSkeleton } from '../components/ui/Skeleton'
+import { productService } from '../services/productService'
+import { categoryService } from '../services/categoryService'
 
 export function HomePage() {
-  const featured = products.filter(p => p.featured).slice(0, 8)
-  const newArrivals = products.filter(p => p.newArrival).slice(0, 4)
+  const [categories, setCategories] = useState([])
+  const [featured, setFeatured] = useState([])
+  const [newArrivals, setNewArrivals] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+    Promise.all([
+      categoryService.list(),
+      productService.list({ featured: true, limit: 8 }),
+      productService.list({ new: true, limit: 4 }),
+    ])
+      .then(([catRes, featRes, newRes]) => {
+        setCategories(catRes.data)
+        setFeatured(featRes.data)
+        setNewArrivals(newRes.data)
+      })
+      .catch(() => setError('Unable to load the homepage right now.'))
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <div>
@@ -51,6 +74,12 @@ export function HomePage() {
         </div>
       </section>
 
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          <div className="card p-4 text-sm text-red-600 bg-red-50 border-red-200">{error}</div>
+        </div>
+      )}
+
       {/* Featured Categories */}
       <section id="categories" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 scroll-mt-20">
         <div className="flex items-center justify-between mb-6">
@@ -59,9 +88,15 @@ export function HomePage() {
             View All <ArrowRight size={16} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {categories.map(c => <CategoryCard key={c.id} category={c} />)}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => <div key={i} className="aspect-[4/5] rounded-xl bg-gray-200 animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {categories.map(c => <CategoryCard key={c.id} category={c} />)}
+          </div>
+        )}
       </section>
 
       {/* Featured Products */}
@@ -72,7 +107,7 @@ export function HomePage() {
             View All <ArrowRight size={16} />
           </Link>
         </div>
-        <ProductGrid products={featured} />
+        {loading ? <ProductGridSkeleton count={8} /> : <ProductGrid products={featured} />}
       </section>
 
       {/* Promo Banner */}
@@ -80,7 +115,7 @@ export function HomePage() {
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary-700 to-primary-900 px-6 py-12 sm:px-12 sm:py-16 text-center">
           <div className="relative z-10">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Up to 30% Off</h2>
-            <p className="mt-2 text-primary-100 max-w-md mx-auto">Don't miss our biggest sale of the season. Limited time only.</p>
+            <p className="mt-2 text-primary-100 max-w-md mx-auto">Don&apos;t miss our biggest sale of the season. Limited time only.</p>
             <Link to="/shop" className="btn bg-white text-primary-700 hover:bg-primary-50 mt-6 px-6 py-3 text-base font-semibold">
               Shop Deals <ArrowRight size={18} />
             </Link>
@@ -99,7 +134,7 @@ export function HomePage() {
             View All <ArrowRight size={16} />
           </Link>
         </div>
-        <ProductGrid products={newArrivals} />
+        {loading ? <ProductGridSkeleton count={4} /> : <ProductGrid products={newArrivals} />}
       </section>
     </div>
   )
