@@ -9,11 +9,11 @@ export function CategoryCard({ category }) {
       className="group relative aspect-[4/5] overflow-hidden rounded-xl bg-gray-100"
     >
       <img
-        src={category.image}
-        alt={category.name}
-        loading="lazy"
-        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-      />
+  src={category.image || 'https://via.placeholder.com/400x500?text=' + encodeURIComponent(category.name)}
+  alt={category.name}
+  loading="lazy"
+  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+/>
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <h3 className="text-lg font-semibold text-white">{category.name}</h3>

@@ -1,20 +1,30 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import PropTypes from 'prop-types'
+import { useAuth } from './AuthContext'
 
 const WishlistContext = createContext(null)
 
 export function WishlistProvider({ children }) {
-  const [items, setItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('wishlist')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
+  const { user } = useAuth()
+  const storageKey = user ? `wishlist_${user.id}` : 'wishlist_guest'
+
+  const [items, setItems] = useState([])
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(items))
-  }, [items])
+    try {
+      const saved = localStorage.getItem(storageKey)
+      setItems(saved ? JSON.parse(saved) : [])
+    } catch {
+      setItems([])
+    }
+    setReady(true)
+  }, [storageKey])
+
+  useEffect(() => {
+    if (!ready) return
+    localStorage.setItem(storageKey, JSON.stringify(items))
+  }, [items, storageKey, ready])
 
   const toggleItem = useCallback((product) => {
     setItems(prev => {
@@ -35,6 +45,10 @@ export function WishlistProvider({ children }) {
       {children}
     </WishlistContext.Provider>
   )
+}
+
+WishlistProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 }
 
 export function useWishlist() {

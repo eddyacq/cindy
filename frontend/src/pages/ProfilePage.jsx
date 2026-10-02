@@ -3,24 +3,31 @@ import { Loader2 } from 'lucide-react'
 import { AccountSidebar } from '../components/AccountSidebar'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { userService } from '../services/userService'
+import { ApiError } from '../services/api'
 
 export function ProfilePage() {
-  const { user, updateProfile } = useAuth()
+  const { user, updateUser } = useAuth()
   const { showToast } = useToast()
   const [form, setForm] = useState({
-    firstName: user?.firstName || '', lastName: user?.lastName || '',
-    email: user?.email || '', phone: user?.phone || '',
+    firstName: user?.firstName || '', lastName: user?.lastName || '', phone: user?.phone || '',
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
-      updateProfile(form)
-      setLoading(false)
+    setError('')
+    try {
+      const res = await userService.updateMe(form)
+      updateUser(res.data) // refreshes name shown in the sidebar/navbar without a full reload
       showToast('Profile updated successfully')
-    }, 600)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -36,10 +43,11 @@ export function ProfilePage() {
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{form.firstName} {form.lastName}</p>
-                <p className="text-sm text-gray-500">{form.email}</p>
+                <p className="text-sm text-gray-500">{user?.email}</p>
               </div>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
@@ -52,11 +60,12 @@ export function ProfilePage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="input" required />
+                <input type="email" value={user?.email || ''} disabled className="input bg-gray-50 text-gray-500 cursor-not-allowed" />
+                <p className="text-xs text-gray-400 mt-1">Email cant be changed here.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
-                <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="input" required />
+                <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="input" />
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
                 {loading ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : 'Save Changes'}

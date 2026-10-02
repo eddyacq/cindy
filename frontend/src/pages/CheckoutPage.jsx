@@ -4,17 +4,22 @@ import { Loader2, CreditCard, Smartphone, Wallet } from 'lucide-react'
 import { CheckoutSteps } from '../components/CheckoutSteps'
 import { OrderSummary } from '../components/OrderSummary'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
+import { addressService } from '../services/addressService'
+import { paymentService } from '../services/paymentService'
+import { ApiError } from '../services/api'
 
 export function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [payError, setPayError] = useState('')
   const [info, setInfo] = useState({ name: '', email: '', phone: '' })
   const [delivery, setDelivery] = useState({ region: '', city: '', area: '', address: '', directions: '', method: 'standard' })
-  const [payment, setPayment] = useState('momo')
 
   const deliveryFee = delivery.method === 'express' ? 60 : 30
   const total = subtotal + deliveryFee
@@ -31,14 +36,65 @@ export function CheckoutPage() {
   const handleInfoSubmit = (e) => { e.preventDefault(); setStep(1) }
   const handleDeliverySubmit = (e) => { e.preventDefault(); setStep(2) }
 
-  const handlePay = () => {
+  // Creates (or reuses) a saved address matching what the customer typed, so /api/payments/initialize has an addressId to attach to the order
+  async function resolveAddressId() {
+    const res = await addressService.create({
+      fullName: info.name,
+      phone: info.phone,
+      region: delivery.region,
+      city: delivery.city,
+      area: delivery.area,
+      address: delivery.address,
+      directions: delivery.directions,
+      isDefault: false,
+    })
+    return res.data.id
+  }
+
+  const handlePay = async () => {
     setLoading(true)
-    setTimeout(() => {
-      clearCart()
-      setLoading(false)
-      showToast('Order placed successfully!')
-      navigate('/order-success')
-    }, 1200)
+    setPayError('')
+    try {
+      const addressId = await resolveAddressId()
+
+      const initRes = await paymentService.initialize({
+        addressId,
+        deliveryMethod: delivery.method,
+        items: items.map(i => ({ productId: i.id, quantity: i.quantity })),
+      })
+      const { reference, amount } = initRes.data
+
+            const handler = window.PaystackPop.setup({
+        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+        email: user?.email || info.email,
+        amount: Math.round(amount * 100), // Paystack expects the amount in pesewas (GHS subunit)
+        currency: 'GHS',
+        ref: reference,
+        callback: (response) => {
+          // runs when the customer completes payment inside the popup
+          paymentService.verify(response.reference)
+            .then(() => {
+              clearCart()
+              showToast('Payment successful! Order placed.')
+              navigate('/order-success')
+            })
+            .catch((err) => {
+              console.error('Paystack verify error:', err)
+              setPayError(err instanceof ApiError ? err.message : 'Payment could not be verified. Contact support with reference ' + reference)
+            })
+            .finally(() => setLoading(false))
+        },
+        onClose: () => {
+          setLoading(false)
+          showToast('Payment cancelled', 'info')
+        },
+      })
+      handler.openIframe()
+    } catch (err) {
+  console.error('Checkout error:', err)
+  setLoading(false)
+  setPayError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.')
+}
   }
 
   return (
@@ -130,22 +186,23 @@ export function CheckoutPage() {
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 card p-6 space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">Payment Method</h2>
+            {payError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{payError}</p>}
             <div className="space-y-3">
               {[
                 { id: 'momo', label: 'Mobile Money', icon: Smartphone, desc: 'MTN, Vodafone, AirtelTigo' },
                 { id: 'card', label: 'Visa / Mastercard', icon: CreditCard, desc: 'Credit or debit card' },
-                { id: 'other', label: 'Other', icon: Wallet, desc: 'Bank transfer, cash on delivery' },
+                { id: 'other', label: 'Other', icon: Wallet, desc: 'Bank transfer' },
               ].map(opt => (
-                <label key={opt.id} className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${payment === opt.id ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}>
-                  <input type="radio" name="payment" value={opt.id} checked={payment === opt.id} onChange={e => setPayment(e.target.value)} className="h-4 w-4 text-primary-600" />
+                <div key={opt.id} className="flex items-center gap-3 p-4 rounded-lg border-2 border-gray-200">
                   <opt.icon size={22} className="text-gray-600" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">{opt.label}</p>
                     <p className="text-xs text-gray-500">{opt.desc}</p>
                   </div>
-                </label>
+                </div>
               ))}
             </div>
+            <p className="text-xs text-gray-500">Youll choose exactly how to pay inside the secure Paystack window that opens.</p>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setStep(1)} className="btn-outline">Back</button>
               <button onClick={handlePay} disabled={loading} className="btn-primary flex-1 py-3 text-base">

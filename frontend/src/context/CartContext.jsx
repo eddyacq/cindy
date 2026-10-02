@@ -1,20 +1,32 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import PropTypes from 'prop-types'
+import { useAuth } from './AuthContext'
 
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('cart')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
+  const { user } = useAuth()
+  const storageKey = user ? `cart_${user.id}` : 'cart_guest' // separates each account's cart, and guests from everyone
 
+  const [items, setItems] = useState([])
+  const [ready, setReady] = useState(false)
+
+  // reload from storage whenever the logged-in identity changes (login, logout, switching accounts)
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items))
-  }, [items])
+    try {
+      const saved = localStorage.getItem(storageKey)
+      setItems(saved ? JSON.parse(saved) : [])
+    } catch {
+      setItems([])
+    }
+    setReady(true)
+  }, [storageKey])
+
+  // only persist once we've loaded for the CURRENT key, so we never overwrite it with a stale empty array mid-switch
+  useEffect(() => {
+    if (!ready) return
+    localStorage.setItem(storageKey, JSON.stringify(items))
+  }, [items, storageKey, ready])
 
   const addItem = useCallback((product, quantity = 1) => {
     setItems(prev => {
@@ -45,6 +57,10 @@ export function CartProvider({ children }) {
       {children}
     </CartContext.Provider>
   )
+}
+
+CartProvider.propTypes = {
+  children: PropTypes.node.isRequired,
 }
 
 export function useCart() {

@@ -1,6 +1,7 @@
 import 'dotenv/config'
 
 if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is missing in .env')
+if (!process.env.PAYSTACK_SECRET_KEY) throw new Error('PAYSTACK_SECRET_KEY is missing in .env')
 
 export const env = {
   port: process.env.PORT || 5000,
@@ -15,4 +16,5 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   isProd: process.env.NODE_ENV === 'production',
+  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
 }

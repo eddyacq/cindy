@@ -1,25 +1,40 @@
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Truck, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { AccountSidebar } from '../components/AccountSidebar'
-import { OrderTimeline } from '../components/OrderTimeline'
-import { orders, trackingSteps } from '../data/mockData'
+import { orderService } from '../services/orderService'
+
+const STATUS_COLOR = {
+  paid: 'text-green-600 bg-green-50',
+  pending: 'text-amber-600 bg-amber-50',
+  failed: 'text-red-600 bg-red-50',
+}
 
 export function OrderDetailsPage() {
   const { id } = useParams()
-  const order = orders.find(o => o.id === id)
+  const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-  if (!order) {
+  useEffect(() => {
+    setLoading(true)
+    orderService.getById(id)
+      .then(res => setOrder(res.data))
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8"><div className="h-64 bg-gray-100 rounded-xl animate-pulse" /></div>
+  }
+
+  if (notFound || !order) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <p className="text-gray-500">Order not found.</p>
         <Link to="/account/orders" className="btn-primary mt-4">Back to Orders</Link>
       </div>
     )
-  }
-
-  const statusColor = {
-    'Paid': 'text-green-600 bg-green-50', 'Shipped': 'text-blue-600 bg-blue-50',
-    'Delivered': 'text-green-600 bg-green-50', 'Processing': 'text-amber-600 bg-amber-50',
   }
 
   return (
@@ -35,12 +50,9 @@ export function OrderDetailsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
                 <p className="text-sm text-gray-500">Order Date</p>
-                <p className="font-medium text-gray-900">{new Date(order.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                <p className="font-medium text-gray-900">{new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               </div>
-              <div className="flex gap-2">
-                <span className={`badge ${statusColor[order.paymentStatus]}`}>{order.paymentStatus}</span>
-                <span className={`badge ${statusColor[order.deliveryStatus]}`}>{order.deliveryStatus}</span>
-              </div>
+              <span className={`badge capitalize ${STATUS_COLOR[order.paymentStatus] || 'text-gray-600 bg-gray-50'}`}>{order.paymentStatus}</span>
             </div>
             <div className="space-y-3">
               {order.items.map((item, i) => (
@@ -57,27 +69,20 @@ export function OrderDetailsPage() {
             <div className="mt-4 pt-4 border-t border-gray-200 space-y-1.5 text-sm">
               <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>GH₵ {order.subtotal.toLocaleString()}</span></div>
               <div className="flex justify-between text-gray-600"><span>Delivery Fee</span><span>GH₵ {order.deliveryFee.toLocaleString()}</span></div>
-              {order.discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-GH₵ {order.discount.toLocaleString()}</span></div>}
               <div className="flex justify-between font-bold text-gray-900 pt-1.5"><span>Total</span><span>GH₵ {order.total.toLocaleString()}</span></div>
             </div>
           </div>
 
           <div className="card p-5">
             <h3 className="text-base font-semibold text-gray-900 mb-2">Delivery Address</h3>
-            <p className="text-sm text-gray-600">{order.address.name}</p>
-            <p className="text-sm text-gray-600">{order.address.street}, {order.address.city}</p>
-            <p className="text-sm text-gray-600">{order.address.region}</p>
+            <p className="text-sm text-gray-600">{order.address.fullName}</p>
+            <p className="text-sm text-gray-600">{order.address.address}{order.address.area ? `, ${order.address.area}` : ''}</p>
+            <p className="text-sm text-gray-600">{order.address.city}, {order.address.region}</p>
             <p className="text-sm text-gray-600">{order.address.phone}</p>
           </div>
 
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-900">Order Tracking</h3>
-              <Link to={`/track-order/${order.id}`} className="btn-outline text-sm">
-                <Truck size={16} /> Track Order
-              </Link>
-            </div>
-            <OrderTimeline steps={trackingSteps} />
+          <div className="card p-5 text-sm text-gray-500">
+            Order tracking isnt available yet — its coming in a future update.
           </div>
         </div>
       </div>
