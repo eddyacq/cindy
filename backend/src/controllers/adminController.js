@@ -1,4 +1,5 @@
 import * as Order from '../models/orderModel.js'
+import * as Product from '../models/productModel.js'
 import { success, fail } from '../utils/response.js'
 
 export async function stats(req, res) {
@@ -52,4 +53,19 @@ export async function updateOrderStatus(req, res) {
 
   const updated = await Order.updateDeliveryStatus(id, status)
   return success(res, { ...Order.toPublic(updated), deliveryStatus: updated.delivery_status }, 'Order status updated')
+}
+
+export async function listProducts(req, res) {
+  const { search, categoryId, status, page, limit } = req.query
+  const { rows, total, page: p, limit: l } = await Product.listAllAdmin({
+    search: search || undefined,
+    categoryId: categoryId ? Number(categoryId) : undefined,
+    status: status || undefined,
+    page: Number(page) || 1,
+    limit: Number(limit) || 20,
+  })
+
+  return success(res, rows.map(Product.toPublic), 'Products retrieved successfully', 200, {
+    pagination: { page: p, limit: l, total, totalPages: Math.ceil(total / l) },
+  })
 }

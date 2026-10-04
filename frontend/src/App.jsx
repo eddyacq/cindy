@@ -29,6 +29,7 @@ import { TrackOrderPage } from './pages/TrackOrderPage'
 import { AdminRoute } from './components/AdminRoute'
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { AdminOrdersPage } from './pages/admin/AdminOrdersPage'
+import { AdminProductsPage } from './pages/admin/AdminProductsPage'
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
                     <Route path="/track-order/:id" element={<TrackOrderPage />} />
                     <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                     <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+                    <Route path="/admin/products" element={<AdminRoute><AdminProductsPage /></AdminRoute>} />
                   </Routes>
                 </main>
                 <Footer />

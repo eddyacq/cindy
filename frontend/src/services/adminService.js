@@ -10,4 +10,5 @@ export const adminService = {
   listOrders: (params) => api.get(`/admin/orders${toQueryString(params)}`), // { data, pagination }
   getOrder: (id) => api.get(`/admin/orders/${id}`),
   updateOrderStatus: (id, status) => api.patch(`/admin/orders/${id}/status`, { status }),
+  listProducts: (params) => api.get(`/admin/products${toQueryString(params)}`), // { data, pagination } — every status
 }

@@ -74,6 +74,7 @@ export const toPublic = (p) => ({
   ...(p.images && { images: p.images.length ? p.images : [p.image_url] }),
   featured: Boolean(p.featured), // tinyint 0/1 → true/false
   newArrival: Boolean(p.new_arrival),
+  status: p.status,
   category: { id: p.category_id, name: p.category_name },
 })
 
@@ -90,3 +91,28 @@ export const update = async (id, data) => {
 export const remove = (id) => db('products').where({ id }).del()
 
 export const findAnyById = (id) => db('products').where({ id }).first()
+
+// admin listing — every status, no category-active requirement
+export async function listAllAdmin({ search, categoryId, status, page = 1, limit = 20 }) {
+  const base = db('products as p').join('categories as c', 'c.id', 'p.category_id')
+
+  const term = String(search || '').trim()
+  if (term) {
+    base.andWhere((q) =>
+      q.where('p.name', 'like', `%${term}%`).orWhere('p.sku', 'like', `%${term}%`)
+    )
+  }
+  if (categoryId) base.andWhere('p.category_id', categoryId)
+  if (status) base.andWhere('p.status', status)
+
+  const [{ total }] = await base.clone().count({ total: '*' })
+
+  const rows = await base
+    .clone()
+    .select('p.*', 'c.name as category_name')
+    .orderBy('p.created_at', 'desc')
+    .limit(limit)
+    .offset((page - 1) * limit)
+
+  return { rows, total: Number(total), page, limit }
+}
