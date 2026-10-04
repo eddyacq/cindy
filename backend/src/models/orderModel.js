@@ -35,7 +35,11 @@ export const findOwnedByReference = (reference, userId) =>
   db('orders').where({ payment_reference: reference, user_id: userId }).first()
 
 export async function markPaid(reference, channel) {
-  await db('orders').where({ payment_reference: reference }).update({ payment_status: 'paid', payment_channel: channel })
+  await db('orders').where({ payment_reference: reference }).update({
+    payment_status: 'paid',
+    payment_channel: channel,
+    delivery_status: 'payment_confirmed',
+  })
   return findByReference(reference)
 }
 
@@ -59,6 +63,7 @@ export const toPublic = (o) => ({
   total: Number(o.total),
   paymentStatus: o.payment_status,
   paymentChannel: o.payment_channel,
+  deliveryStatus: o.delivery_status,
   address: typeof o.delivery_address === 'string' ? JSON.parse(o.delivery_address) : o.delivery_address,
   createdAt: o.created_at,
 })
