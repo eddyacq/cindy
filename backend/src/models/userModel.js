@@ -22,3 +22,9 @@ export const updateProfile = async (id, data) => {
   await db('users').where({ id }).update(data)
   return findById(id)
 }
+
+export async function markPaid(reference, channel) {
+  await db('orders').where({ payment_reference: reference })
+    .update({ payment_status: 'paid', payment_channel: channel, delivery_status: 'payment_confirmed' })
+  return findByReference(reference)
+}

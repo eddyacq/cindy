@@ -14,6 +14,7 @@ import addressRoutes from './routes/addressRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import paymentRoutes from './routes/paymentRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
+import adminRoutes from './routes/adminRoutes.js'
 
 
 const app = express()
@@ -32,6 +33,8 @@ app.use('/api/addresses', addressRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/admin', adminRoutes)
+
 
 app.use(notFound)      // must come after all routes
 app.use(errorHandler)  // must be last

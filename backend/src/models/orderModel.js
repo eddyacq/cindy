@@ -63,4 +63,49 @@ export const toPublic = (o) => ({
   createdAt: o.created_at,
 })
 
+export const STATUS_ORDER = ['order_placed', 'payment_confirmed', 'preparing', 'shipped', 'out_for_delivery', 'delivered']
 
+export async function listAllAdmin({ status, page = 1, limit = 20 }) {
+  const base = db('orders as o').join('users as u', 'u.id', 'o.user_id')
+  if (status) base.andWhere('o.delivery_status', status)
+
+  const [{ total }] = await base.clone().count({ total: '*' })
+  const rows = await base.clone()
+    .select('o.*', 'u.first_name', 'u.last_name', 'u.email')
+    .orderBy('o.created_at', 'desc')
+    .limit(limit)
+    .offset((page - 1) * limit)
+
+  return { rows, total: Number(total), page, limit }
+}
+
+export const findAnyById = (id) =>
+  db('orders as o').join('users as u', 'u.id', 'o.user_id').where('o.id', id)
+    .select('o.*', 'u.first_name', 'u.last_name', 'u.email').first()
+
+export async function updateDeliveryStatus(id, status) {
+  await db('orders').where({ id }).update({ delivery_status: status })
+  return db('orders').where({ id }).first()
+}
+
+export async function getStats() {
+  const [{ totalRevenue }] = await db('orders').where('payment_status', 'paid').sum({ totalRevenue: 'total' })
+  const [{ totalOrders }] = await db('orders').count({ totalOrders: '*' })
+
+  const statusBreakdown = await db('orders').select('delivery_status').count({ count: '*' }).groupBy('delivery_status')
+
+  const revenueByDay = await db('orders')
+    .where('payment_status', 'paid')
+    .andWhere('created_at', '>=', db.raw("DATE_SUB(CURDATE(), INTERVAL 6 DAY)"))
+    .select(db.raw('DATE(created_at) as day'))
+    .sum({ revenue: 'total' })
+    .groupBy('day')
+    .orderBy('day')
+
+  return {
+    totalRevenue: Number(totalRevenue) || 0,
+    totalOrders: Number(totalOrders),
+    statusBreakdown: statusBreakdown.map(s => ({ status: s.delivery_status, count: Number(s.count) })),
+    revenueByDay: revenueByDay.map(r => ({ day: r.day, revenue: Number(r.revenue) })),
+  }
+}

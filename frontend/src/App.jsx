@@ -26,6 +26,9 @@ import { CheckoutPage } from './pages/CheckoutPage'
 import { OrderSuccessPage } from './pages/OrderSuccessPage'
 import { TrackOrderPage } from './pages/TrackOrderPage'
 
+import { AdminRoute } from './components/AdminRoute'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
+
 function App() {
   return (
     <BrowserRouter>
@@ -56,6 +59,7 @@ function App() {
                     <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
                     <Route path="/order-success" element={<OrderSuccessPage />} />
                     <Route path="/track-order/:id" element={<TrackOrderPage />} />
+                    <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                   </Routes>
                 </main>
                 <Footer />
