@@ -4,17 +4,7 @@ import PropTypes from 'prop-types'
 import { AdminSidebar } from '../../components/admin/AdminSidebar'
 import { adminService } from '../../services/adminService'
 import { useToast } from '../../context/ToastContext'
-
-const STATUS_ORDER = ['order_placed', 'payment_confirmed', 'preparing', 'shipped', 'out_for_delivery', 'delivered']
-
-const STATUS_LABELS = {
-  order_placed: 'Order Placed',
-  payment_confirmed: 'Payment Confirmed',
-  preparing: 'Preparing Order',
-  shipped: 'Shipped',
-  out_for_delivery: 'Out for Delivery',
-  delivered: 'Delivered',
-}
+import { DELIVERY_STATUS_ORDER as STATUS_ORDER, DELIVERY_STATUS_LABELS as STATUS_LABELS } from '../../utils/orderStatus'
 
 const PAYMENT_COLOR = {
   paid: 'text-green-600 bg-green-50',

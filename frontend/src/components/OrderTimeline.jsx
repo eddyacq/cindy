@@ -1,7 +1,7 @@
 import { Check, Clock } from 'lucide-react'
-import { trackingSteps } from '../data/mockData'
+import PropTypes from 'prop-types'
 
-export function OrderTimeline({ steps = trackingSteps }) {
+export function OrderTimeline({ steps }) {
   return (
     <div className="relative">
       {steps.map((step, i) => (
@@ -18,10 +18,19 @@ export function OrderTimeline({ steps = trackingSteps }) {
           </div>
           <div className="pt-1.5">
             <p className={`font-semibold text-sm ${step.completed ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</p>
-            <p className="text-sm text-gray-500 mt-0.5">{step.date}</p>
+            {step.date && <p className="text-sm text-gray-500 mt-0.5">{step.date}</p>}
           </div>
         </div>
       ))}
     </div>
   )
+}
+
+OrderTimeline.propTypes = {
+  steps: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    label: PropTypes.string.isRequired,
+    date: PropTypes.string,
+    completed: PropTypes.bool,
+  })).isRequired,
 }

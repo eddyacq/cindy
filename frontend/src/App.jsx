@@ -61,7 +61,7 @@ function App() {
                     <Route path="/account/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                     <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
                     <Route path="/order-success" element={<OrderSuccessPage />} />
-                    <Route path="/track-order/:id" element={<TrackOrderPage />} />
+                    <Route path="/track-order/:id" element={<ProtectedRoute><TrackOrderPage /></ProtectedRoute>} />
                     <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
                     <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
                     <Route path="/admin/products" element={<AdminRoute><AdminProductsPage /></AdminRoute>} />

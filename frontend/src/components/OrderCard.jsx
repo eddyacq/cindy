@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Package } from 'lucide-react'
+import { Package, Truck } from 'lucide-react'
 import PropTypes from 'prop-types'
+import { DELIVERY_STATUS_LABELS } from '../utils/orderStatus'
 
 const STATUS_COLOR = {
   paid: 'text-green-600 bg-green-50',
@@ -9,6 +10,8 @@ const STATUS_COLOR = {
 }
 
 export function OrderCard({ order }) {
+  const isPaid = order.paymentStatus === 'paid'
+
   return (
     <div className="card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
@@ -23,9 +26,21 @@ export function OrderCard({ order }) {
         {order.itemCount} Items
         <span className="font-semibold text-gray-900 ml-auto">GH₵ {order.total.toLocaleString()}</span>
       </div>
-      <Link to={`/account/orders/${order.id}`} className="btn-outline w-full">
-        View Order
-      </Link>
+      {isPaid && order.deliveryStatus && (
+        <p className="flex items-center gap-1.5 text-xs text-primary-700 bg-primary-50 rounded-lg px-2.5 py-1.5 mb-4 w-fit">
+          <Truck size={14} /> {DELIVERY_STATUS_LABELS[order.deliveryStatus]}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Link to={`/account/orders/${order.id}`} className="btn-outline flex-1">
+          View Order
+        </Link>
+        {isPaid && (
+          <Link to={`/track-order/${order.id}`} className="btn-primary flex-1">
+            Track
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
@@ -35,6 +50,7 @@ OrderCard.propTypes = {
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     createdAt: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]).isRequired,
     paymentStatus: PropTypes.string.isRequired,
+    deliveryStatus: PropTypes.string,
     itemCount: PropTypes.number.isRequired,
     total: PropTypes.number.isRequired,
   }).isRequired,

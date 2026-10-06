@@ -8,24 +8,7 @@ import { AdminSidebar } from '../../components/admin/AdminSidebar'
 import { adminService } from '../../services/adminService'
 import { productService } from '../../services/productService'
 import { categoryService } from '../../services/categoryService'
-
-const STATUS_LABELS = {
-  order_placed: 'Order Placed',
-  payment_confirmed: 'Payment Confirmed',
-  preparing: 'Preparing',
-  shipped: 'Shipped',
-  out_for_delivery: 'Out for Delivery',
-  delivered: 'Delivered',
-}
-
-const STATUS_COLORS = {
-  order_placed: '#94a3b8',
-  payment_confirmed: '#36abf6',
-  preparing: '#ff9a37',
-  shipped: '#0c8ee7',
-  out_for_delivery: '#f06006',
-  delivered: '#16a34a',
-}
+import { DELIVERY_STATUS_LABELS as STATUS_LABELS, DELIVERY_STATUS_COLORS as STATUS_COLORS } from '../../utils/orderStatus'
 
 const DAY_LABEL = (iso) => new Date(iso).toLocaleDateString('en-GB', { weekday: 'short' })
 

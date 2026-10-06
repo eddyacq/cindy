@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Truck } from 'lucide-react'
 import { AccountSidebar } from '../components/AccountSidebar'
 import { orderService } from '../services/orderService'
+import { DELIVERY_STATUS_LABELS } from '../utils/orderStatus'
 
 const STATUS_COLOR = {
   paid: 'text-green-600 bg-green-50',
@@ -81,8 +82,20 @@ export function OrderDetailsPage() {
             <p className="text-sm text-gray-600">{order.address.phone}</p>
           </div>
 
-          <div className="card p-5 text-sm text-gray-500">
-            Order tracking isnt available yet — its coming in a future update.
+          <div className="card p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">Delivery Status</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {order.paymentStatus === 'paid'
+                    ? DELIVERY_STATUS_LABELS[order.deliveryStatus]
+                    : 'Tracking starts once payment is confirmed.'}
+                </p>
+              </div>
+              <Link to={`/track-order/${order.id}`} className="btn-outline shrink-0">
+                <Truck size={16} /> Track Order
+              </Link>
+            </div>
           </div>
         </div>
       </div>
