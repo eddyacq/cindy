@@ -1,5 +1,6 @@
 import * as Order from '../models/orderModel.js'
 import * as Product from '../models/productModel.js'
+import * as Category from '../models/categoryModel.js'
 import { success, fail } from '../utils/response.js'
 
 export async function stats(req, res) {
@@ -68,4 +69,9 @@ export async function listProducts(req, res) {
   return success(res, rows.map(Product.toPublic), 'Products retrieved successfully', 200, {
     pagination: { page: p, limit: l, total, totalPages: Math.ceil(total / l) },
   })
+}
+
+export async function listCategories(req, res) {
+  const categories = await Category.listAllAdmin()
+  return success(res, categories.map(Category.toPublic), 'Categories retrieved successfully')
 }

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { stats, listOrders, getOrder, updateOrderStatus, listProducts } from '../controllers/adminController.js'
+import { stats, listOrders, getOrder, updateOrderStatus, listProducts, listCategories } from '../controllers/adminController.js'
 import { authenticateUser, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
@@ -10,5 +10,6 @@ router.get('/orders', listOrders)
 router.get('/orders/:id', getOrder)
 router.patch('/orders/:id/status', updateOrderStatus)
 router.get('/products', listProducts)
+router.get('/categories', listCategories)
 
 export default router

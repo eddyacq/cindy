@@ -21,6 +21,8 @@ export const toPublic = (c) => ({
   name: c.name,
   description: c.description,
   image: c.image_url,
+  status: c.status,
+  ...(c.product_count !== undefined && { productCount: Number(c.product_count) }),
 })
 
 export const create = async (data) => {
@@ -36,3 +38,12 @@ export const update = async (id, data) => {
 export const remove = (id) => db('categories').where({ id }).del()
 
 export const findAnyById = (id) => db('categories').where({ id }).first() // no status filter — admin can see inactive too
+
+// admin listing — every status, with a product count so the UI can explain why delete is blocked
+export const listAllAdmin = () =>
+  db('categories as c')
+    .leftJoin('products as p', 'p.category_id', 'c.id')
+    .select('c.*')
+    .count('p.id as product_count')
+    .groupBy('c.id')
+    .orderBy('c.name')
